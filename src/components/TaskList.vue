@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { Plus, Pencil, Trash2, X, Check } from "@lucide/vue";
+import { ref, watch } from "vue";
+import draggable from "vuedraggable";
+import { Plus, Pencil, Trash2, X, Check, GripVertical } from "@lucide/vue";
 import type { Task } from "@/types";
 import { usePlanManager } from "@/composables/usePlanManager";
 import Button from "@/components/ui/button/Button.vue";
@@ -14,7 +15,19 @@ const {
   updateTask,
   selectedCategoryId,
   selectTask,
+  saveToLocalStorage,
+  tasks,
 } = usePlanManager();
+
+const localTasks = ref<Task[]>([]);
+
+watch(
+  () => filteredTasks.value,
+  (newTasks) => {
+    localTasks.value = [...newTasks];
+  },
+  { immediate: true },
+);
 
 const showAddForm = ref(false);
 const newTaskTitle = ref("");
@@ -56,6 +69,18 @@ function handleDeleteConfirm() {
   showDeleteDialog.value = false;
   deletingTaskId.value = null;
 }
+
+function syncTaskOrder() {
+  if (!selectedCategoryId.value) return;
+  const categoryId = selectedCategoryId.value;
+  const newOrderIds = localTasks.value.map((t) => t.id);
+  const otherTasks = tasks.value.filter((t) => t.categoryId !== categoryId);
+  const categoryTasks = tasks.value.filter((t) => t.categoryId === categoryId);
+  const taskMap = new Map(categoryTasks.map((t) => [t.id, t]));
+  const reordered = newOrderIds.map((id) => taskMap.get(id)).filter(Boolean) as Task[];
+  tasks.value.splice(0, tasks.value.length, ...otherTasks, ...reordered);
+  saveToLocalStorage();
+}
 </script>
 
 <template>
@@ -93,76 +118,89 @@ function handleDeleteConfirm() {
       </div>
     </div>
     <div class="flex-1 overflow-y-auto p-2">
-      <div v-if="filteredTasks.length === 0" class="flex flex-col items-center justify-center h-full text-muted-foreground">
+      <div v-if="localTasks.length === 0" class="flex flex-col items-center justify-center h-full text-muted-foreground">
         <p class="text-sm">选择一个计划查看任务</p>
       </div>
-      <div
-        v-for="task in filteredTasks"
-        :key="task.id"
-        :class="[
-          'flex flex-col gap-1 px-3 py-3 rounded-lg cursor-pointer transition-colors group',
-          selectedTaskId === task.id
-            ? 'bg-blue-600 text-white dark:bg-blue-500'
-            : 'hover:bg-accent hover:text-accent-foreground',
-        ]"
-        @click="selectTask(task.id)"
+      <draggable
+        v-model="localTasks"
+        item-key="id"
+        handle=".drag-handle"
+        animation="150"
+        @end="syncTaskOrder"
       >
-        <div class="flex items-center justify-between">
-          <template v-if="editingTaskId === task.id">
-            <input
-              v-model="editingTitle"
-              type="text"
-              class="flex-1 px-1 py-0.5 text-sm bg-background text-foreground border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring mr-2"
-              @keyup.enter="saveEdit(task.id)"
-              @keyup.escape="editingTaskId = null"
-              @click.stop
-            />
-            <Button size="icon-sm" variant="ghost" @click.stop="saveEdit(task.id)">
-              <Check :size="14" />
-            </Button>
-            <Button size="icon-sm" variant="ghost" @click.stop="editingTaskId = null">
-              <X :size="14" />
-            </Button>
-          </template>
-          <template v-else>
-            <span class="text-sm font-medium truncate flex-1">{{ task.title }}</span>
-            <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button size="icon-sm" variant="ghost" @click.stop="startEdit(task)">
-                <Pencil :size="14" />
-              </Button>
-              <Button size="icon-sm" variant="ghost" @click.stop="handleDeleteClick(task.id)">
-                <Trash2 :size="14" />
-              </Button>
+        <template #item="{ element: task }">
+          <div
+            :class="[
+              'flex flex-col gap-1 px-3 py-3 rounded-lg cursor-pointer transition-colors group',
+              selectedTaskId === task.id
+                ? 'bg-blue-600 text-white dark:bg-blue-500'
+                : 'hover:bg-accent hover:text-accent-foreground',
+            ]"
+            @click="selectTask(task.id)"
+          >
+            <div class="flex items-center justify-between">
+              <template v-if="editingTaskId === task.id">
+                <input
+                  v-model="editingTitle"
+                  type="text"
+                  class="flex-1 px-1 py-0.5 text-sm bg-background text-foreground border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring mr-2"
+                  @keyup.enter="saveEdit(task.id)"
+                  @keyup.escape="editingTaskId = null"
+                  @click.stop
+                />
+                <Button size="icon-sm" variant="ghost" @click.stop="saveEdit(task.id)">
+                  <Check :size="14" />
+                </Button>
+                <Button size="icon-sm" variant="ghost" @click.stop="editingTaskId = null">
+                  <X :size="14" />
+                </Button>
+              </template>
+              <template v-else>
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <span class="drag-handle cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
+                    <GripVertical :size="14" />
+                  </span>
+                  <span class="text-sm font-medium truncate">{{ task.title }}</span>
+                </div>
+                <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button size="icon-sm" variant="ghost" @click.stop="startEdit(task)">
+                    <Pencil :size="14" />
+                  </Button>
+                  <Button size="icon-sm" variant="ghost" @click.stop="handleDeleteClick(task.id)">
+                    <Trash2 :size="14" />
+                  </Button>
+                </div>
+              </template>
             </div>
-          </template>
-        </div>
-        <div v-if="editingTaskId !== task.id" class="flex items-center gap-2">
-          <span
-            :class="[
-              'text-xs px-1.5 py-0.5 rounded-full',
-              task.status === 'completed'
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                : task.status === 'in_progress'
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
-            ]"
-          >
-            {{ task.status === 'completed' ? '已完成' : task.status === 'in_progress' ? '进行中' : '待处理' }}
-          </span>
-          <span
-            :class="[
-              'text-xs px-1.5 py-0.5 rounded-full',
-              task.priority === 'high'
-                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                : task.priority === 'medium'
-                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
-            ]"
-          >
-            {{ task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低' }}
-          </span>
-        </div>
-      </div>
+            <div v-if="editingTaskId !== task.id" class="flex items-center gap-2">
+              <span
+                :class="[
+                  'text-xs px-1.5 py-0.5 rounded-full',
+                  task.status === 'completed'
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : task.status === 'in_progress'
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+                ]"
+              >
+                {{ task.status === 'completed' ? '已完成' : task.status === 'in_progress' ? '进行中' : '待处理' }}
+              </span>
+              <span
+                :class="[
+                  'text-xs px-1.5 py-0.5 rounded-full',
+                  task.priority === 'high'
+                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    : task.priority === 'medium'
+                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+                ]"
+              >
+                {{ task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低' }}
+              </span>
+            </div>
+          </div>
+        </template>
+      </draggable>
     </div>
   </div>
 

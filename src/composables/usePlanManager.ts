@@ -242,5 +242,6 @@ export function usePlanManager() {
     addTask,
     updateTask,
     deleteTask,
+    saveToLocalStorage,
   };
 }

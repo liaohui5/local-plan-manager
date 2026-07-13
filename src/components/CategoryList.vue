@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import draggable from "vuedraggable";
 import {
   Briefcase,
   BookOpen,
@@ -10,6 +11,7 @@ import {
   Trash2,
   X,
   Check,
+  GripVertical,
   Home,
   Star,
   Flag,
@@ -35,6 +37,7 @@ const {
   updateCategory,
   deleteCategory,
   selectCategory,
+  saveToLocalStorage,
 } = usePlanManager();
 
 const showAddForm = ref(false);
@@ -133,72 +136,83 @@ function handleSelect(id: string) {
       </div>
     </div>
     <div class="flex-1 overflow-y-auto p-2">
-      <div
-        v-for="category in categories"
-        :key="category.id"
-        :class="[
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors',
-          selectedCategoryId === category.id
-            ? 'bg-blue-600 text-white dark:bg-blue-500'
-            : 'hover:bg-accent hover:text-accent-foreground',
-        ]"
-        @click="handleSelect(category.id)"
+      <draggable
+        :list="categories"
+        item-key="id"
+        handle=".drag-handle"
+        animation="150"
+        @end="saveToLocalStorage()"
       >
-        <component
-          :is="iconMap[category.icon || 'briefcase']"
-          :size="18"
-          class="shrink-0"
-        />
-        <div class="flex-1 min-w-0">
-          <template v-if="editingCategoryId === category.id">
-            <input
-              v-model="editingName"
-              type="text"
-              class="w-full px-1 py-0.5 text-sm bg-background text-foreground border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring mb-1"
-              @keyup.enter="saveEdit(category.id)"
-              @keyup.escape="editingCategoryId = null"
-              @click.stop
-            />
-            <div class="flex flex-wrap gap-1">
-              <button
-                v-for="iconName in availableIcons"
-                :key="iconName"
-                :class="[
-                  'p-1 rounded border transition-colors',
-                  editingIcon === iconName
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:bg-accent',
-                ]"
-                @click.stop="editingIcon = iconName"
-              >
-                <component :is="iconMap[iconName]" :size="14" />
-              </button>
-            </div>
-          </template>
-          <template v-else>
-            <span class="text-sm font-medium truncate block">{{ category.name }}</span>
-            <span
-              v-if="category.description"
-              :class="[
-                'text-xs truncate block',
-                selectedCategoryId === category.id
-                  ? 'text-white/70'
-                  : 'text-muted-foreground',
-              ]"
-            >
-              {{ category.description }}
+        <template #item="{ element: category }">
+          <div
+            :class="[
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors',
+              selectedCategoryId === category.id
+                ? 'bg-blue-600 text-white dark:bg-blue-500'
+                : 'hover:bg-accent hover:text-accent-foreground',
+            ]"
+            @click="handleSelect(category.id)"
+          >
+            <span class="drag-handle cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
+              <GripVertical :size="14" />
             </span>
-          </template>
-        </div>
-        <div v-if="editingCategoryId !== category.id" class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button size="icon-sm" variant="ghost" @click.stop="startEdit(category)">
-            <Pencil :size="14" />
-          </Button>
-          <Button size="icon-sm" variant="ghost" @click.stop="handleDeleteClick(category.id)">
-            <Trash2 :size="14" />
-          </Button>
-        </div>
-      </div>
+            <component
+              :is="iconMap[category.icon || 'briefcase']"
+              :size="18"
+              class="shrink-0"
+            />
+            <div class="flex-1 min-w-0">
+              <template v-if="editingCategoryId === category.id">
+                <input
+                  v-model="editingName"
+                  type="text"
+                  class="w-full px-1 py-0.5 text-sm bg-background text-foreground border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring mb-1"
+                  @keyup.enter="saveEdit(category.id)"
+                  @keyup.escape="editingCategoryId = null"
+                  @click.stop
+                />
+                <div class="flex flex-wrap gap-1">
+                  <button
+                    v-for="iconName in availableIcons"
+                    :key="iconName"
+                    :class="[
+                      'p-1 rounded border transition-colors',
+                      editingIcon === iconName
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:bg-accent',
+                    ]"
+                    @click.stop="editingIcon = iconName"
+                  >
+                    <component :is="iconMap[iconName]" :size="14" />
+                  </button>
+                </div>
+              </template>
+              <template v-else>
+                <span class="text-sm font-medium truncate block">{{ category.name }}</span>
+                <span
+                  v-if="category.description"
+                  :class="[
+                    'text-xs truncate block',
+                    selectedCategoryId === category.id
+                      ? 'text-white/70'
+                      : 'text-muted-foreground',
+                  ]"
+                >
+                  {{ category.description }}
+                </span>
+              </template>
+            </div>
+            <div v-if="editingCategoryId !== category.id" class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button size="icon-sm" variant="ghost" @click.stop="startEdit(category)">
+                <Pencil :size="14" />
+              </Button>
+              <Button size="icon-sm" variant="ghost" @click.stop="handleDeleteClick(category.id)">
+                <Trash2 :size="14" />
+              </Button>
+            </div>
+          </div>
+        </template>
+      </draggable>
     </div>
 
     <ConfirmDialog
