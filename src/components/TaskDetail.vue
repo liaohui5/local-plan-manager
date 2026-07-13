@@ -33,17 +33,13 @@ function handleChange(content: string) {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex-1 min-h-0">
+    <div class="flex-1 min-h-0 h-full">
       <div v-if="!task" class="flex flex-col items-center justify-center h-full text-muted-foreground">
         <p class="text-sm">选择一个任务查看详情</p>
       </div>
-      <div v-else class="h-full">
-        <MdEditor
-          v-model="editorContent"
-          language="zh-CN"
-          @change="handleChange"
-        />
-      </div>
+      <template v-else>
+        <MdEditor class="!h-full" v-model="editorContent" language="zh-CN" @change="handleChange" />
+      </template>
     </div>
   </div>
 </template>

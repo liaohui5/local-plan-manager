@@ -15,7 +15,7 @@ const { selectedTask, updateTaskContent } = usePlanManager();
     <div class="w-80 border-r border-border bg-card shrink-0">
       <TaskList />
     </div>
-    <div class="flex-1 bg-background min-w-0">
+    <div class="flex-1 bg-background min-w-0 h-full">
       <TaskDetail :task="selectedTask" @update:content="updateTaskContent" />
     </div>
   </div>

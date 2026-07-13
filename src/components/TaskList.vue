@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, X, Check } from "@lucide/vue";
 import type { Task } from "@/types";
 import { usePlanManager } from "@/composables/usePlanManager";
 import Button from "@/components/ui/button/Button.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 
 const {
   filteredTasks,
@@ -19,6 +20,8 @@ const showAddForm = ref(false);
 const newTaskTitle = ref("");
 const editingTaskId = ref<string | null>(null);
 const editingTitle = ref("");
+const deletingTaskId = ref<string | null>(null);
+const showDeleteDialog = ref(false);
 
 function handleAdd() {
   if (newTaskTitle.value.trim() && selectedCategoryId.value) {
@@ -41,10 +44,17 @@ function saveEdit(id: string) {
   editingTaskId.value = null;
 }
 
-function handleDelete(id: string) {
-  if (confirm("确定要删除这个任务吗？")) {
-    deleteTask(id);
+function handleDeleteClick(id: string) {
+  deletingTaskId.value = id;
+  showDeleteDialog.value = true;
+}
+
+function handleDeleteConfirm() {
+  if (deletingTaskId.value) {
+    deleteTask(deletingTaskId.value);
   }
+  showDeleteDialog.value = false;
+  deletingTaskId.value = null;
 }
 </script>
 
@@ -120,7 +130,7 @@ function handleDelete(id: string) {
               <Button size="icon-sm" variant="ghost" @click.stop="startEdit(task)">
                 <Pencil :size="14" />
               </Button>
-              <Button size="icon-sm" variant="ghost" @click.stop="handleDelete(task.id)">
+              <Button size="icon-sm" variant="ghost" @click.stop="handleDeleteClick(task.id)">
                 <Trash2 :size="14" />
               </Button>
             </div>
@@ -155,4 +165,14 @@ function handleDelete(id: string) {
       </div>
     </div>
   </div>
+
+  <ConfirmDialog
+    v-model:open="showDeleteDialog"
+    title="删除任务"
+    description="确定要删除这个任务吗？"
+    confirm-text="删除"
+    @confirm="handleDeleteConfirm"
+  >
+    <Button size="icon-sm" variant="ghost" style="display: none" />
+  </ConfirmDialog>
 </template>
