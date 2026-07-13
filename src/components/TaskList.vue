@@ -102,7 +102,7 @@ function handleDeleteConfirm() {
         :class="[
           'flex flex-col gap-1 px-3 py-3 rounded-lg cursor-pointer transition-colors group',
           selectedTaskId === task.id
-            ? 'bg-primary text-primary-foreground'
+            ? 'bg-blue-600 text-white dark:bg-blue-500'
             : 'hover:bg-accent hover:text-accent-foreground',
         ]"
         @click="selectTask(task.id)"

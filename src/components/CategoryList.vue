@@ -137,9 +137,9 @@ function handleSelect(id: string) {
         v-for="category in categories"
         :key="category.id"
         :class="[
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors group',
+          'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors',
           selectedCategoryId === category.id
-            ? 'bg-primary text-primary-foreground'
+            ? 'bg-blue-600 text-white dark:bg-blue-500'
             : 'hover:bg-accent hover:text-accent-foreground',
         ]"
         @click="handleSelect(category.id)"
@@ -182,7 +182,7 @@ function handleSelect(id: string) {
               :class="[
                 'text-xs truncate block',
                 selectedCategoryId === category.id
-                  ? 'text-primary-foreground/70'
+                  ? 'text-white/70'
                   : 'text-muted-foreground',
               ]"
             >
