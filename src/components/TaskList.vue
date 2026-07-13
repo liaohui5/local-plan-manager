@@ -155,7 +155,7 @@ function syncTaskOrder() {
               </template>
               <template v-else>
                 <div class="flex items-center gap-2 flex-1 min-w-0">
-                  <span class="drag-handle cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
+                  <span :class="['drag-handle cursor-grab active:cursor-grabbing transition-colors', selectedTaskId === task.id ? 'text-white' : 'text-muted-foreground hover:text-foreground']">
                     <GripVertical :size="14" />
                   </span>
                   <span class="text-sm font-medium truncate">{{ task.title }}</span>

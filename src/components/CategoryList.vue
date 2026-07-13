@@ -151,7 +151,7 @@ function handleSelect(id: string) {
             ]"
             @click="handleSelect(category.id)"
           >
-            <span class="drag-handle cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
+            <span :class="['drag-handle cursor-grab active:cursor-grabbing transition-colors', selectedCategoryId === category.id ? 'text-white' : 'text-muted-foreground hover:text-foreground']">
               <GripVertical :size="14" />
             </span>
             <component
