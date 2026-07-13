@@ -1,14 +1,51 @@
 <script setup lang="ts">
+import { ref } from "vue";
+import { Plus, Pencil, Trash2, X, Check } from "@lucide/vue";
 import type { Task } from "@/types";
+import { usePlanManager } from "@/composables/usePlanManager";
+import Button from "@/components/ui/button/Button.vue";
 
-defineProps<{
-  tasks: Task[];
-  selectedTaskId: string | null;
-}>();
+const {
+  filteredTasks,
+  selectedTaskId,
+  addTask,
+  deleteTask,
+  updateTask,
+  selectedCategoryId,
+  selectTask,
+} = usePlanManager();
 
-const emit = defineEmits<{
-  (e: "select", id: string): void;
-}>();
+const showAddForm = ref(false);
+const newTaskTitle = ref("");
+const editingTaskId = ref<string | null>(null);
+const editingTitle = ref("");
+
+function handleAdd() {
+  if (newTaskTitle.value.trim() && selectedCategoryId.value) {
+    const newTask = addTask(selectedCategoryId.value, newTaskTitle.value.trim());
+    newTaskTitle.value = "";
+    showAddForm.value = false;
+    selectTask(newTask.id);
+  }
+}
+
+function startEdit(task: Task) {
+  editingTaskId.value = task.id;
+  editingTitle.value = task.title;
+}
+
+function saveEdit(id: string) {
+  if (editingTitle.value.trim()) {
+    updateTask(id, { title: editingTitle.value.trim() });
+  }
+  editingTaskId.value = null;
+}
+
+function handleDelete(id: string) {
+  if (confirm("确定要删除这个任务吗？")) {
+    deleteTask(id);
+  }
+}
 </script>
 
 <template>
@@ -16,25 +53,80 @@ const emit = defineEmits<{
     <div class="p-4 border-b border-border">
       <h2 class="text-lg font-semibold text-foreground">任务列表</h2>
     </div>
+    <div class="p-2 border-b border-border">
+      <Button
+        v-if="!showAddForm"
+        variant="outline"
+        size="sm"
+        class="w-full"
+        @click="showAddForm = true"
+        :disabled="!selectedCategoryId"
+      >
+        <Plus :size="16" class="mr-1" />
+        添加任务
+      </Button>
+      <div v-else class="flex gap-1">
+        <input
+          v-model="newTaskTitle"
+          type="text"
+          placeholder="任务标题"
+          class="flex-1 px-2 py-1 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          @keyup.enter="handleAdd"
+          @keyup.escape="showAddForm = false"
+        />
+        <Button size="icon-sm" variant="ghost" @click="handleAdd">
+          <Check :size="16" />
+        </Button>
+        <Button size="icon-sm" variant="ghost" @click="showAddForm = false">
+          <X :size="16" />
+        </Button>
+      </div>
+    </div>
     <div class="flex-1 overflow-y-auto p-2">
-      <div v-if="tasks.length === 0" class="flex flex-col items-center justify-center h-full text-muted-foreground">
+      <div v-if="filteredTasks.length === 0" class="flex flex-col items-center justify-center h-full text-muted-foreground">
         <p class="text-sm">选择一个计划查看任务</p>
       </div>
       <div
-        v-for="task in tasks"
+        v-for="task in filteredTasks"
         :key="task.id"
         :class="[
-          'flex flex-col gap-1 px-3 py-3 rounded-lg cursor-pointer transition-colors',
+          'flex flex-col gap-1 px-3 py-3 rounded-lg cursor-pointer transition-colors group',
           selectedTaskId === task.id
             ? 'bg-primary text-primary-foreground'
             : 'hover:bg-accent hover:text-accent-foreground',
         ]"
-        @click="emit('select', task.id)"
+        @click="selectTask(task.id)"
       >
         <div class="flex items-center justify-between">
-          <span class="text-sm font-medium truncate">{{ task.title }}</span>
+          <template v-if="editingTaskId === task.id">
+            <input
+              v-model="editingTitle"
+              type="text"
+              class="flex-1 px-1 py-0.5 text-sm bg-background text-foreground border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring mr-2"
+              @keyup.enter="saveEdit(task.id)"
+              @keyup.escape="editingTaskId = null"
+              @click.stop
+            />
+            <Button size="icon-sm" variant="ghost" @click.stop="saveEdit(task.id)">
+              <Check :size="14" />
+            </Button>
+            <Button size="icon-sm" variant="ghost" @click.stop="editingTaskId = null">
+              <X :size="14" />
+            </Button>
+          </template>
+          <template v-else>
+            <span class="text-sm font-medium truncate flex-1">{{ task.title }}</span>
+            <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button size="icon-sm" variant="ghost" @click.stop="startEdit(task)">
+                <Pencil :size="14" />
+              </Button>
+              <Button size="icon-sm" variant="ghost" @click.stop="handleDelete(task.id)">
+                <Trash2 :size="14" />
+              </Button>
+            </div>
+          </template>
         </div>
-        <div class="flex items-center gap-2">
+        <div v-if="editingTaskId !== task.id" class="flex items-center gap-2">
           <span
             :class="[
               'text-xs px-1.5 py-0.5 rounded-full',

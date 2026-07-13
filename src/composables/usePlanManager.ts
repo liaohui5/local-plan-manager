@@ -1,7 +1,13 @@
 import { ref, computed } from "vue";
 import type { Category, Task } from "@/types";
 
-const categories = ref<Category[]>([
+const STORAGE_KEY_CATEGORIES = "plan-manager-categories";
+const STORAGE_KEY_TASKS = "plan-manager-tasks";
+
+const categories = ref<Category[]>([]);
+const tasks = ref<Task[]>([]);
+
+const sampleCategories: Category[] = [
   {
     id: "cat-1",
     name: "工作",
@@ -26,9 +32,9 @@ const categories = ref<Category[]>([
     description: "财务管理计划",
     icon: "dollar-sign",
   },
-]);
+];
 
-const tasks = ref<Task[]>([
+const sampleTasks: Task[] = [
   {
     id: "task-1",
     categoryId: "cat-1",
@@ -84,7 +90,41 @@ const tasks = ref<Task[]>([
     priority: "high",
     tags: ["健康", "健身"],
   },
-]);
+];
+
+function loadFromLocalStorage() {
+  try {
+    const storedCategories = localStorage.getItem(STORAGE_KEY_CATEGORIES);
+    const storedTasks = localStorage.getItem(STORAGE_KEY_TASKS);
+
+    if (storedCategories) {
+      categories.value = JSON.parse(storedCategories);
+    } else {
+      categories.value = JSON.parse(JSON.stringify(sampleCategories));
+    }
+
+    if (storedTasks) {
+      tasks.value = JSON.parse(storedTasks);
+    } else {
+      tasks.value = JSON.parse(JSON.stringify(sampleTasks));
+    }
+  } catch (e) {
+    console.error("Failed to load from localStorage", e);
+    categories.value = JSON.parse(JSON.stringify(sampleCategories));
+    tasks.value = JSON.parse(JSON.stringify(sampleTasks));
+  }
+}
+
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories.value));
+    localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(tasks.value));
+  } catch (e) {
+    console.error("Failed to save to localStorage", e);
+  }
+}
+
+loadFromLocalStorage();
 
 const selectedCategoryId = ref<string | null>(null);
 const selectedTaskId = ref<string | null>(null);
@@ -118,7 +158,70 @@ function updateTaskContent(id: string, content: string) {
   if (task) {
     task.content = content;
     task.updatedAt = new Date().toISOString();
+    saveToLocalStorage();
   }
+}
+
+function addCategory(name: string, description = "", icon = "briefcase") {
+  const newCategory: Category = {
+    id: `cat-${Date.now()}`,
+    name,
+    description,
+    icon,
+  };
+  categories.value.push(newCategory);
+  saveToLocalStorage();
+}
+
+function updateCategory(id: string, updates: Partial<Category>) {
+  const index = categories.value.findIndex((c) => c.id === id);
+  if (index !== -1) {
+    categories.value[index] = { ...categories.value[index], ...updates };
+    saveToLocalStorage();
+  }
+}
+
+function deleteCategory(id: string) {
+  categories.value = categories.value.filter((c) => c.id !== id);
+  tasks.value = tasks.value.filter((t) => t.categoryId !== id);
+  if (selectedCategoryId.value === id) {
+    selectedCategoryId.value = null;
+    selectedTaskId.value = null;
+  }
+  saveToLocalStorage();
+}
+
+function addTask(categoryId: string, title: string) {
+  const newTask: Task = {
+    id: `task-${Date.now()}`,
+    categoryId,
+    title,
+    content: `# ${title}\n\n`,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: "pending",
+    priority: "medium",
+    tags: [],
+  };
+  tasks.value.push(newTask);
+  saveToLocalStorage();
+  return newTask;
+}
+
+function updateTask(id: string, updates: Partial<Task>) {
+  const index = tasks.value.findIndex((t) => t.id === id);
+  if (index !== -1) {
+    tasks.value[index] = { ...tasks.value[index], ...updates };
+    saveToLocalStorage();
+  }
+}
+
+function deleteTask(id: string) {
+  tasks.value = tasks.value.filter((t) => t.id !== id);
+  if (selectedTaskId.value === id) {
+    selectedTaskId.value = null;
+  }
+  saveToLocalStorage();
 }
 
 export function usePlanManager() {
@@ -133,5 +236,11 @@ export function usePlanManager() {
     selectCategory,
     selectTask,
     updateTaskContent,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    addTask,
+    updateTask,
+    deleteTask,
   };
 }
