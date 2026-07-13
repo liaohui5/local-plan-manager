@@ -1,11 +1,6 @@
-import { ref, computed } from "vue";
+import { computed } from "vue";
+import { useLocalStorage } from "@vueuse/core";
 import type { Category, Task } from "@/types";
-
-const STORAGE_KEY_CATEGORIES = "plan-manager-categories";
-const STORAGE_KEY_TASKS = "plan-manager-tasks";
-
-const categories = ref<Category[]>([]);
-const tasks = ref<Task[]>([]);
 
 const sampleCategories: Category[] = [
   {
@@ -92,42 +87,10 @@ const sampleTasks: Task[] = [
   },
 ];
 
-function loadFromLocalStorage() {
-  try {
-    const storedCategories = localStorage.getItem(STORAGE_KEY_CATEGORIES);
-    const storedTasks = localStorage.getItem(STORAGE_KEY_TASKS);
-
-    if (storedCategories) {
-      categories.value = JSON.parse(storedCategories);
-    } else {
-      categories.value = JSON.parse(JSON.stringify(sampleCategories));
-    }
-
-    if (storedTasks) {
-      tasks.value = JSON.parse(storedTasks);
-    } else {
-      tasks.value = JSON.parse(JSON.stringify(sampleTasks));
-    }
-  } catch (e) {
-    console.error("Failed to load from localStorage", e);
-    categories.value = JSON.parse(JSON.stringify(sampleCategories));
-    tasks.value = JSON.parse(JSON.stringify(sampleTasks));
-  }
-}
-
-function saveToLocalStorage() {
-  try {
-    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories.value));
-    localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(tasks.value));
-  } catch (e) {
-    console.error("Failed to save to localStorage", e);
-  }
-}
-
-loadFromLocalStorage();
-
-const selectedCategoryId = ref<string | null>(null);
-const selectedTaskId = ref<string | null>(null);
+const categories = useLocalStorage<Category[]>("plan-manager-categories", sampleCategories);
+const tasks = useLocalStorage<Task[]>("plan-manager-tasks", sampleTasks);
+const selectedCategoryId = useLocalStorage<string | null>("plan-manager-selected-category", null);
+const selectedTaskId = useLocalStorage<string | null>("plan-manager-selected-task", null);
 
 const selectedCategory = computed(() => {
   if (!selectedCategoryId.value) return null;
@@ -158,7 +121,6 @@ function updateTaskContent(id: string, content: string) {
   if (task) {
     task.content = content;
     task.updatedAt = new Date().toISOString();
-    saveToLocalStorage();
   }
 }
 
@@ -169,15 +131,15 @@ function addCategory(name: string, description = "", icon = "briefcase") {
     description,
     icon,
   };
-  categories.value.push(newCategory);
-  saveToLocalStorage();
+  categories.value = [...categories.value, newCategory];
 }
 
 function updateCategory(id: string, updates: Partial<Category>) {
   const index = categories.value.findIndex((c) => c.id === id);
   if (index !== -1) {
-    categories.value[index] = { ...categories.value[index], ...updates };
-    saveToLocalStorage();
+    const updated = [...categories.value];
+    updated[index] = { ...updated[index], ...updates };
+    categories.value = updated;
   }
 }
 
@@ -188,7 +150,6 @@ function deleteCategory(id: string) {
     selectedCategoryId.value = null;
     selectedTaskId.value = null;
   }
-  saveToLocalStorage();
 }
 
 function addTask(categoryId: string, title: string) {
@@ -203,16 +164,16 @@ function addTask(categoryId: string, title: string) {
     priority: "medium",
     tags: [],
   };
-  tasks.value.push(newTask);
-  saveToLocalStorage();
+  tasks.value = [...tasks.value, newTask];
   return newTask;
 }
 
 function updateTask(id: string, updates: Partial<Task>) {
   const index = tasks.value.findIndex((t) => t.id === id);
   if (index !== -1) {
-    tasks.value[index] = { ...tasks.value[index], ...updates };
-    saveToLocalStorage();
+    const updated = [...tasks.value];
+    updated[index] = { ...updated[index], ...updates };
+    tasks.value = updated;
   }
 }
 
@@ -221,7 +182,6 @@ function deleteTask(id: string) {
   if (selectedTaskId.value === id) {
     selectedTaskId.value = null;
   }
-  saveToLocalStorage();
 }
 
 export function usePlanManager() {
@@ -242,6 +202,5 @@ export function usePlanManager() {
     addTask,
     updateTask,
     deleteTask,
-    saveToLocalStorage,
   };
 }

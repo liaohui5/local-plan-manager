@@ -15,7 +15,6 @@ const {
   updateTask,
   selectedCategoryId,
   selectTask,
-  saveToLocalStorage,
   tasks,
 } = usePlanManager();
 
@@ -79,7 +78,6 @@ function syncTaskOrder() {
   const taskMap = new Map(categoryTasks.map((t) => [t.id, t]));
   const reordered = newOrderIds.map((id) => taskMap.get(id)).filter(Boolean) as Task[];
   tasks.value.splice(0, tasks.value.length, ...otherTasks, ...reordered);
-  saveToLocalStorage();
 }
 </script>
 

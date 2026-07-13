@@ -37,7 +37,6 @@ const {
   updateCategory,
   deleteCategory,
   selectCategory,
-  saveToLocalStorage,
 } = usePlanManager();
 
 const showAddForm = ref(false);
@@ -141,12 +140,11 @@ function handleSelect(id: string) {
         item-key="id"
         handle=".drag-handle"
         animation="150"
-        @end="saveToLocalStorage()"
       >
         <template #item="{ element: category }">
           <div
             :class="[
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors',
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors group',
               selectedCategoryId === category.id
                 ? 'bg-blue-600 text-white dark:bg-blue-500'
                 : 'hover:bg-accent hover:text-accent-foreground',
