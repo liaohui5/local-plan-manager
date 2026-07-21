@@ -1,5 +1,5 @@
 {
-  "name": "plan-manager",
+  "name": "local-plan-manager",
   "version": "0.0.1",
   "type": "module",
   "scripts": {
