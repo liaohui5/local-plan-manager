@@ -9,6 +9,7 @@ import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import Dialog from "@/components/ui/dialog/Dialog.vue";
 
 const {
+  categories,
   filteredTasks,
   selectedTaskId,
   addTask,
@@ -36,7 +37,12 @@ const showDeleteDialog = ref(false);
 
 const editingTask = ref<Task | null>(null);
 const showEditDialog = ref(false);
-const editForm = ref({ title: "", status: "pending" as Task["status"], priority: "medium" as Task["priority"] });
+const editForm = ref({
+  title: "",
+  status: "pending" as Task["status"],
+  priority: "medium" as Task["priority"],
+  categoryId: "",
+});
 
 function handleAdd() {
   if (newTaskTitle.value.trim() && selectedCategoryId.value) {
@@ -49,7 +55,12 @@ function handleAdd() {
 
 function openEditDialog(task: Task) {
   editingTask.value = task;
-  editForm.value = { title: task.title, status: task.status, priority: task.priority };
+  editForm.value = {
+    title: task.title,
+    status: task.status,
+    priority: task.priority,
+    categoryId: task.categoryId,
+  };
   showEditDialog.value = true;
 }
 
@@ -59,6 +70,7 @@ function handleSaveEdit() {
       title: editForm.value.title.trim(),
       status: editForm.value.status,
       priority: editForm.value.priority,
+      categoryId: editForm.value.categoryId,
     });
   }
   showEditDialog.value = false;
@@ -203,6 +215,17 @@ function syncTaskOrder() {
             type="text"
             class="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground">所属计划</label>
+          <select
+            v-model="editForm.categoryId"
+            class="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option v-for="category in categories" :key="category.id" :value="category.id">
+              {{ category.name }}
+            </option>
+          </select>
         </div>
         <div class="space-y-2">
           <label class="text-sm font-medium text-foreground">状态</label>

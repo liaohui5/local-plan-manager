@@ -28,6 +28,7 @@ import {
 import type { Category } from "@/types";
 import { usePlanManager } from "@/composables/usePlanManager";
 import Button from "@/components/ui/button/Button.vue";
+import Dialog from "@/components/ui/dialog/Dialog.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 
 const {
@@ -41,11 +42,12 @@ const {
 
 const showAddForm = ref(false);
 const newCategoryName = ref("");
-const editingCategoryId = ref<string | null>(null);
-const editingName = ref("");
-const editingIcon = ref("briefcase");
 const deletingCategoryId = ref<string | null>(null);
 const showDeleteDialog = ref(false);
+
+const showEditDialog = ref(false);
+const editingCategory = ref<Category | null>(null);
+const editForm = ref({ name: "", description: "", icon: "briefcase" });
 
 const iconMap: Record<string, typeof Briefcase> = {
   briefcase: Briefcase,
@@ -76,17 +78,26 @@ function handleAdd() {
   }
 }
 
-function startEdit(category: Category) {
-  editingCategoryId.value = category.id;
-  editingName.value = category.name;
-  editingIcon.value = category.icon || "briefcase";
+function openEditDialog(category: Category) {
+  editingCategory.value = category;
+  editForm.value = {
+    name: category.name,
+    description: category.description || "",
+    icon: category.icon || "briefcase",
+  };
+  showEditDialog.value = true;
 }
 
-function saveEdit(id: string) {
-  if (editingName.value.trim()) {
-    updateCategory(id, { name: editingName.value.trim(), icon: editingIcon.value });
+function handleEditConfirm() {
+  if (editingCategory.value && editForm.value.name.trim()) {
+    updateCategory(editingCategory.value.id, {
+      name: editForm.value.name.trim(),
+      description: editForm.value.description.trim(),
+      icon: editForm.value.icon,
+    });
   }
-  editingCategoryId.value = null;
+  showEditDialog.value = false;
+  editingCategory.value = null;
 }
 
 function handleDeleteClick(id: string) {
@@ -160,48 +171,21 @@ function handleSelect(id: string) {
               class="shrink-0"
             />
             <div class="flex-1 min-w-0">
-              <template v-if="editingCategoryId === category.id">
-                <input
-                  v-model="editingName"
-                  type="text"
-                  class="w-full px-1 py-0.5 text-sm bg-background text-foreground border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring mb-1"
-                  @keyup.enter="saveEdit(category.id)"
-                  @keyup.escape="editingCategoryId = null"
-                  @click.stop
-                />
-                <div class="flex flex-wrap gap-1">
-                  <button
-                    v-for="iconName in availableIcons"
-                    :key="iconName"
-                    :class="[
-                      'p-1 rounded border transition-colors',
-                      editingIcon === iconName
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:bg-accent',
-                    ]"
-                    @click.stop="editingIcon = iconName"
-                  >
-                    <component :is="iconMap[iconName]" :size="14" />
-                  </button>
-                </div>
-              </template>
-              <template v-else>
-                <span class="text-sm font-medium truncate block">{{ category.name }}</span>
-                <span
-                  v-if="category.description"
-                  :class="[
-                    'text-xs truncate block',
-                    selectedCategoryId === category.id
-                      ? 'text-white/70'
-                      : 'text-muted-foreground',
-                  ]"
-                >
-                  {{ category.description }}
-                </span>
-              </template>
+              <span class="text-sm font-medium truncate block">{{ category.name }}</span>
+              <span
+                v-if="category.description"
+                :class="[
+                  'text-xs truncate block',
+                  selectedCategoryId === category.id
+                    ? 'text-white/70'
+                    : 'text-muted-foreground',
+                ]"
+              >
+                {{ category.description }}
+              </span>
             </div>
-            <div v-if="editingCategoryId !== category.id" class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button size="icon-sm" variant="ghost" @click.stop="startEdit(category)">
+            <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button size="icon-sm" variant="ghost" @click.stop="openEditDialog(category)">
                 <Pencil :size="14" />
               </Button>
               <Button size="icon-sm" variant="ghost" @click.stop="handleDeleteClick(category.id)">
@@ -212,6 +196,51 @@ function handleSelect(id: string) {
         </template>
       </draggable>
     </div>
+
+    <Dialog v-model:open="showEditDialog" title="编辑计划" description="修改计划信息">
+      <template #default>
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-foreground">标题</label>
+            <input
+              v-model="editForm.name"
+              type="text"
+              class="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-foreground">描述</label>
+            <textarea
+              v-model="editForm.description"
+              rows="3"
+              class="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            />
+          </div>
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-foreground">图标</label>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                v-for="iconName in availableIcons"
+                :key="iconName"
+                :class="[
+                  'p-1.5 rounded border transition-colors',
+                  editForm.icon === iconName
+                    ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                    : 'border-border hover:bg-accent',
+                ]"
+                @click="editForm.icon = iconName"
+              >
+                <component :is="iconMap[iconName]" :size="16" />
+              </button>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <Button variant="outline" @click="showEditDialog = false">取消</Button>
+            <Button @click="handleEditConfirm">保存</Button>
+          </div>
+        </div>
+      </template>
+    </Dialog>
 
     <ConfirmDialog
       v-model:open="showDeleteDialog"
