@@ -9,8 +9,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  X,
-  Check,
   GripVertical,
   Home,
   Star,
@@ -40,13 +38,13 @@ const {
   selectCategory,
 } = usePlanManager();
 
-const showAddForm = ref(false);
-const newCategoryName = ref("");
 const deletingCategoryId = ref<string | null>(null);
 const showDeleteDialog = ref(false);
 
+const showAddDialog = ref(false);
 const showEditDialog = ref(false);
 const editingCategory = ref<Category | null>(null);
+const addForm = ref({ name: "", description: "", icon: "briefcase" });
 const editForm = ref({ name: "", description: "", icon: "briefcase" });
 
 const iconMap: Record<string, typeof Briefcase> = {
@@ -70,11 +68,15 @@ const iconMap: Record<string, typeof Briefcase> = {
 
 const availableIcons = Object.keys(iconMap);
 
-function handleAdd() {
-  if (newCategoryName.value.trim()) {
-    addCategory(newCategoryName.value.trim(), "", "briefcase");
-    newCategoryName.value = "";
-    showAddForm.value = false;
+function openAddDialog() {
+  addForm.value = { name: "", description: "", icon: "briefcase" };
+  showAddDialog.value = true;
+}
+
+function handleAddConfirm() {
+  if (addForm.value.name.trim()) {
+    addCategory(addForm.value.name.trim(), addForm.value.description.trim(), addForm.value.icon);
+    showAddDialog.value = false;
   }
 }
 
@@ -124,26 +126,10 @@ function handleSelect(id: string) {
       <h2 class="text-lg font-semibold text-foreground">计划列表</h2>
     </div>
     <div class="p-2 border-b border-border">
-      <Button v-if="!showAddForm" variant="outline" size="sm" class="w-full" @click="showAddForm = true">
+      <Button variant="outline" size="sm" class="w-full" @click="openAddDialog">
         <Plus :size="16" class="mr-1" />
         添加计划
       </Button>
-      <div v-else class="flex gap-1">
-        <input
-          v-model="newCategoryName"
-          type="text"
-          placeholder="计划名称"
-          class="flex-1 px-2 py-1 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          @keyup.enter="handleAdd"
-          @keyup.escape="showAddForm = false"
-        />
-        <Button size="icon-sm" variant="ghost" @click="handleAdd">
-          <Check :size="16" />
-        </Button>
-        <Button size="icon-sm" variant="ghost" @click="showAddForm = false">
-          <X :size="16" />
-        </Button>
-      </div>
     </div>
     <div class="flex-1 overflow-y-auto p-2">
       <draggable
@@ -196,6 +182,53 @@ function handleSelect(id: string) {
         </template>
       </draggable>
     </div>
+
+    <Dialog v-model:open="showAddDialog" title="添加计划" description="创建新计划">
+      <template #default>
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-foreground">标题</label>
+            <input
+              v-model="addForm.name"
+              type="text"
+              placeholder="计划名称"
+              class="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-foreground">描述</label>
+            <textarea
+              v-model="addForm.description"
+              rows="3"
+              placeholder="计划描述（可选）"
+              class="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            />
+          </div>
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-foreground">图标</label>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                v-for="iconName in availableIcons"
+                :key="iconName"
+                :class="[
+                  'p-1.5 rounded border transition-colors',
+                  addForm.icon === iconName
+                    ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                    : 'border-border hover:bg-accent',
+                ]"
+                @click="addForm.icon = iconName"
+              >
+                <component :is="iconMap[iconName]" :size="16" />
+              </button>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <Button variant="outline" @click="showAddDialog = false">取消</Button>
+            <Button @click="handleAddConfirm">创建</Button>
+          </div>
+        </div>
+      </template>
+    </Dialog>
 
     <Dialog v-model:open="showEditDialog" title="编辑计划" description="修改计划信息">
       <template #default>

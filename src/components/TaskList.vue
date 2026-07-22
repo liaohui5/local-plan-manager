@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import draggable from "vuedraggable";
-import { Plus, Pencil, Trash2, X, Check, GripVertical } from "@lucide/vue";
+import { Plus, Pencil, Trash2, GripVertical } from "@lucide/vue";
 import type { Task } from "@/types";
 import { usePlanManager } from "@/composables/usePlanManager";
 import Button from "@/components/ui/button/Button.vue";
@@ -30,13 +30,17 @@ watch(
   { immediate: true },
 );
 
-const showAddForm = ref(false);
-const newTaskTitle = ref("");
 const deletingTaskId = ref<string | null>(null);
 const showDeleteDialog = ref(false);
 
-const editingTask = ref<Task | null>(null);
+const showAddDialog = ref(false);
 const showEditDialog = ref(false);
+const editingTask = ref<Task | null>(null);
+const addForm = ref({
+  title: "",
+  status: "pending" as Task["status"],
+  priority: "medium" as Task["priority"],
+});
 const editForm = ref({
   title: "",
   status: "pending" as Task["status"],
@@ -44,13 +48,17 @@ const editForm = ref({
   categoryId: "",
 });
 
-function handleAdd() {
-  if (newTaskTitle.value.trim() && selectedCategoryId.value) {
-    const newTask = addTask(selectedCategoryId.value, newTaskTitle.value.trim());
-    newTaskTitle.value = "";
-    showAddForm.value = false;
+function handleAddConfirm() {
+  if (addForm.value.title.trim() && selectedCategoryId.value) {
+    const newTask = addTask(selectedCategoryId.value, addForm.value.title.trim());
+    showAddDialog.value = false;
     selectTask(newTask.id);
   }
+}
+
+function openAddDialog() {
+  addForm.value = { title: "", status: "pending", priority: "medium" };
+  showAddDialog.value = true;
 }
 
 function openEditDialog(task: Task) {
@@ -109,32 +117,15 @@ function syncTaskOrder() {
     </div>
     <div class="p-2 border-b border-border">
       <Button
-        v-if="!showAddForm"
         variant="outline"
         size="sm"
         class="w-full"
-        @click="showAddForm = true"
+        @click="openAddDialog"
         :disabled="!selectedCategoryId"
       >
         <Plus :size="16" class="mr-1" />
         添加任务
       </Button>
-      <div v-else class="flex gap-1">
-        <input
-          v-model="newTaskTitle"
-          type="text"
-          placeholder="任务标题"
-          class="flex-1 px-2 py-1 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          @keyup.enter="handleAdd"
-          @keyup.escape="showAddForm = false"
-        />
-        <Button size="icon-sm" variant="ghost" @click="handleAdd">
-          <Check :size="16" />
-        </Button>
-        <Button size="icon-sm" variant="ghost" @click="showAddForm = false">
-          <X :size="16" />
-        </Button>
-      </div>
     </div>
     <div class="flex-1 overflow-y-auto p-2">
       <div v-if="localTasks.length === 0" class="flex flex-col items-center justify-center h-full text-muted-foreground">
@@ -204,6 +195,48 @@ function syncTaskOrder() {
       </draggable>
     </div>
   </div>
+
+  <Dialog v-model:open="showAddDialog" title="添加任务" description="创建新任务">
+    <template #default>
+      <div class="space-y-4">
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground">任务标题</label>
+          <input
+            v-model="addForm.title"
+            type="text"
+            placeholder="任务标题"
+            class="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground">状态</label>
+          <select
+            v-model="addForm.status"
+            class="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="pending">待处理</option>
+            <option value="in_progress">进行中</option>
+            <option value="completed">已完成</option>
+          </select>
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground">优先级</label>
+          <select
+            v-model="addForm.priority"
+            class="w-full px-3 py-2 text-sm border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="low">低</option>
+            <option value="medium">中</option>
+            <option value="high">高</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <Button variant="outline" @click="showAddDialog = false">取消</Button>
+          <Button @click="handleAddConfirm">创建</Button>
+        </div>
+      </div>
+    </template>
+  </Dialog>
 
   <Dialog v-model:open="showEditDialog" title="编辑任务" description="修改任务信息">
     <template #default>
