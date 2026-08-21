@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import type { Task } from "@/types";
-import { MdEditor } from "md-editor-v3";
+import { MdEditor, config } from "md-editor-v3";
+import { useLocalStorage } from "@vueuse/core";
 import "md-editor-v3/lib/style.css";
 
 const props = defineProps<{
@@ -29,6 +30,45 @@ function handleChange(content: string) {
     emit("update:content", props.task.id, content);
   }
 }
+
+// editorRef
+let editorRef = ref<InstanceType<typeof MdEditor>>();
+const setMdEditorPreviewOnly = (onlyPreview: boolean) => {
+  // @ts-ignore
+  editorRef.value?.togglePreviewOnly(onlyPreview);
+};
+
+let isPreviewOnly = useLocalStorage("__isPreviewOnly__", false);
+function togglePreviewOnly(e: KeyboardEvent) {
+  if (editorRef.value && e.ctrlKey && e.key == "e") {
+    console.log(editorRef.value);
+    isPreviewOnly.value = !isPreviewOnly.value;
+    setMdEditorPreviewOnly(isPreviewOnly.value);
+  }
+}
+
+onMounted(() => {
+  setMdEditorPreviewOnly(isPreviewOnly.value);
+  window.addEventListener("keyup", togglePreviewOnly);
+});
+
+config({
+  codeMirrorExtensions(extensions) {
+    // disabled short link
+    return extensions.map((item) => {
+      if (item.type === "linkShortener") {
+        return {
+          ...item,
+          options: {
+            maxLength: 100,
+            shortenText: (url: string) => url,
+          },
+        };
+      }
+      return item;
+    });
+  },
+});
 </script>
 
 <template>
@@ -38,7 +78,14 @@ function handleChange(content: string) {
         <p class="text-sm">选择一个任务查看详情</p>
       </div>
       <template v-else>
-        <MdEditor class="!h-full" v-model="editorContent" language="zh-CN" @change="handleChange" />
+        <MdEditor
+          ref="editorRef"
+          :completions="[]"
+          class="h-full!"
+          v-model="editorContent"
+          language="zh-CN"
+          @change="handleChange"
+        />
       </template>
     </div>
   </div>
