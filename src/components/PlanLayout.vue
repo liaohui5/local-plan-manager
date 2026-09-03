@@ -15,7 +15,8 @@ function toggleTaskList() {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.ctrlKey && e.key === "\\") {
+  if (e.repeat) return;
+  if (e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey && e.key === "\\") {
     e.preventDefault();
     toggleTaskList();
   }
@@ -33,6 +34,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
     <div
       class="shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out"
       :class="taskListCollapsed ? 'w-0' : 'w-80'"
+      :inert="taskListCollapsed"
     >
       <div class="w-80 h-full border-r border-border bg-card">
         <TaskList @toggle="toggleTaskList" />
