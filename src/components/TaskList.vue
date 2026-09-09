@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import draggable from "vuedraggable";
-import { Plus, Pencil, Trash2, GripVertical, ChevronsLeft } from "@lucide/vue";
+import { Plus, Pencil, Trash2, GripVertical } from "@lucide/vue";
 import type { Task } from "@/types";
 import { usePlanManager } from "@/composables/usePlanManager";
 import Button from "@/components/ui/button/Button.vue";
@@ -19,8 +19,6 @@ const {
   selectTask,
   tasks,
 } = usePlanManager();
-
-const emit = defineEmits<{ (e: "toggle"): void }>();
 
 const localTasks = ref<Task[]>([]);
 
@@ -114,17 +112,8 @@ function syncTaskOrder() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="p-4 border-b border-border flex items-center justify-between">
+    <div class="p-4 border-b border-border">
       <h2 class="text-lg font-semibold text-foreground">任务列表</h2>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        title="收起任务列表 (Ctrl+\)"
-        aria-label="收起任务列表 (Ctrl+\)"
-        @click="emit('toggle')"
-      >
-        <ChevronsLeft :size="18" />
-      </Button>
     </div>
     <div class="p-2 border-b border-border">
       <Button

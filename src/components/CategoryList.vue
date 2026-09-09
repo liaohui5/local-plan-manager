@@ -22,14 +22,17 @@ import {
   Tag,
   FolderOpen,
   FileText,
+  ChevronsLeft,
 } from "@lucide/vue";
 import type { Category } from "@/types";
 import { usePlanManager } from "@/composables/usePlanManager";
 import Button from "@/components/ui/button/Button.vue";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Dialog from "@/components/ui/dialog/Dialog.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 
 const {
+  // composables
   categories,
   selectedCategoryId,
   addCategory,
@@ -115,6 +118,8 @@ function handleDeleteConfirm() {
   deletingCategoryId.value = null;
 }
 
+const emit = defineEmits<{ (e: "toggle"): void }>();
+
 function handleSelect(id: string) {
   selectCategory(id);
 }
@@ -122,8 +127,20 @@ function handleSelect(id: string) {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="p-4 border-b border-border">
+    <div class="p-4 border-b border-border flex items-center justify-between">
       <h2 class="text-lg font-semibold text-foreground">计划列表</h2>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button class="hover:cursor-pointer" variant="ghost" size="icon-sm" @click="emit('toggle')">
+              <ChevronsLeft :size="18" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>收起计划列表 (Ctrl+\)</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
     <div class="p-2 border-b border-border">
       <Button variant="outline" size="sm" class="w-full" @click="openAddDialog">
@@ -132,12 +149,7 @@ function handleSelect(id: string) {
       </Button>
     </div>
     <div class="flex-1 overflow-y-auto p-2">
-      <draggable
-        :list="categories"
-        item-key="id"
-        handle=".drag-handle"
-        animation="150"
-      >
+      <draggable :list="categories" item-key="id" handle=".drag-handle" animation="150">
         <template #item="{ element: category }">
           <div
             :class="[
@@ -148,23 +160,22 @@ function handleSelect(id: string) {
             ]"
             @click="handleSelect(category.id)"
           >
-            <span :class="['drag-handle cursor-grab active:cursor-grabbing transition-colors', selectedCategoryId === category.id ? 'text-white' : 'text-muted-foreground hover:text-foreground']">
+            <span
+              :class="[
+                'drag-handle cursor-grab active:cursor-grabbing transition-colors',
+                selectedCategoryId === category.id ? 'text-white' : 'text-muted-foreground hover:text-foreground',
+              ]"
+            >
               <GripVertical :size="14" />
             </span>
-            <component
-              :is="iconMap[category.icon || 'briefcase']"
-              :size="18"
-              class="shrink-0"
-            />
+            <component :is="iconMap[category.icon || 'briefcase']" :size="18" class="shrink-0" />
             <div class="flex-1 min-w-0">
               <span class="text-sm font-medium truncate block">{{ category.name }}</span>
               <span
                 v-if="category.description"
                 :class="[
                   'text-xs truncate block',
-                  selectedCategoryId === category.id
-                    ? 'text-white/70'
-                    : 'text-muted-foreground',
+                  selectedCategoryId === category.id ? 'text-white/70' : 'text-muted-foreground',
                 ]"
               >
                 {{ category.description }}

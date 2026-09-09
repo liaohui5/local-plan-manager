@@ -8,17 +8,17 @@ import { usePlanManager } from "@/composables/usePlanManager";
 
 const { selectedTask, updateTaskContent } = usePlanManager();
 
-const taskListCollapsed = useLocalStorage("plan-manager-tasklist-collapsed", false);
+const categoryListCollapsed = useLocalStorage("plan-manager-categorylist-collapsed", false);
 
-function toggleTaskList() {
-  taskListCollapsed.value = !taskListCollapsed.value;
+function toggleCategoryList() {
+  categoryListCollapsed.value = !categoryListCollapsed.value;
 }
 
 function onKeydown(e: KeyboardEvent) {
   if (e.repeat) return;
   if (e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey && e.key === "\\") {
     e.preventDefault();
-    toggleTaskList();
+    toggleCategoryList();
   }
 }
 
@@ -28,17 +28,17 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 
 <template>
   <div class="flex h-screen w-full overflow-hidden">
-    <div class="w-64 border-r border-border bg-card shrink-0">
-      <CategoryList />
-    </div>
     <div
       class="shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out"
-      :class="taskListCollapsed ? 'w-0' : 'w-80'"
-      :inert="taskListCollapsed"
+      :class="categoryListCollapsed ? 'w-0' : 'w-64'"
+      :inert="categoryListCollapsed"
     >
-      <div class="w-80 h-full border-r border-border bg-card">
-        <TaskList @toggle="toggleTaskList" />
+      <div class="w-64 h-full border-r border-border bg-card">
+        <CategoryList @toggle="toggleCategoryList" />
       </div>
+    </div>
+    <div class="w-80 shrink-0 border-r border-border bg-card h-full overflow-hidden">
+      <TaskList />
     </div>
     <div class="flex-1 bg-background min-w-0 h-full">
       <TaskDetail :task="selectedTask" @update:content="updateTaskContent" />
