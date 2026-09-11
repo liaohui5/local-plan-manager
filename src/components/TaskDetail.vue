@@ -37,19 +37,34 @@ const setMdEditorPreviewOnly = (onlyPreview: boolean) => {
   // @ts-ignore
   editorRef.value?.togglePreviewOnly(onlyPreview);
 };
+const setMdEditorCodeOnly = (onlyCode: boolean) => {
+  // @ts-ignore
+  editorRef.value?.togglePreview(onlyCode);
+};
 
+// 仅显示预览效果区域
 let isPreviewOnly = useLocalStorage("__isPreviewOnly__", false);
 function togglePreviewOnly(e: KeyboardEvent) {
-  if (editorRef.value && e.ctrlKey && e.key == "e") {
-    console.log(editorRef.value);
+  if (editorRef.value && e.ctrlKey && e.key == "p") {
+    // console.log(editorRef.value);
     isPreviewOnly.value = !isPreviewOnly.value;
     setMdEditorPreviewOnly(isPreviewOnly.value);
+  }
+}
+
+// 仅显示代码编辑区
+let isCodeOnly = useLocalStorage("__isCodeOnly__", false);
+function togglePreview(e: KeyboardEvent) {
+  if (editorRef.value && e.ctrlKey && e.key == "e") {
+    isCodeOnly.value = !isCodeOnly.value;
+    setMdEditorCodeOnly(isCodeOnly.value);
   }
 }
 
 onMounted(() => {
   setMdEditorPreviewOnly(isPreviewOnly.value);
   window.addEventListener("keyup", togglePreviewOnly);
+  window.addEventListener("keyup", togglePreview);
 });
 
 config({

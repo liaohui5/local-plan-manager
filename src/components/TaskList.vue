@@ -116,28 +116,19 @@ function syncTaskOrder() {
       <h2 class="text-lg font-semibold text-foreground">任务列表</h2>
     </div>
     <div class="p-2 border-b border-border">
-      <Button
-        variant="outline"
-        size="sm"
-        class="w-full"
-        @click="openAddDialog"
-        :disabled="!selectedCategoryId"
-      >
+      <Button variant="outline" size="sm" class="w-full" @click="openAddDialog" :disabled="!selectedCategoryId">
         <Plus :size="16" class="mr-1" />
         添加任务
       </Button>
     </div>
     <div class="flex-1 overflow-y-auto p-2">
-      <div v-if="localTasks.length === 0" class="flex flex-col items-center justify-center h-full text-muted-foreground">
+      <div
+        v-if="localTasks.length === 0"
+        class="flex flex-col items-center justify-center h-full text-muted-foreground"
+      >
         <p class="text-sm">选择一个计划查看任务</p>
       </div>
-      <draggable
-        v-model="localTasks"
-        item-key="id"
-        handle=".drag-handle"
-        animation="150"
-        @end="syncTaskOrder"
-      >
+      <draggable v-model="localTasks" item-key="id" handle=".drag-handle" animation="150" @end="syncTaskOrder">
         <template #item="{ element: task }">
           <div
             :class="[
@@ -150,7 +141,12 @@ function syncTaskOrder() {
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2 flex-1 min-w-0">
-                <span :class="['drag-handle cursor-grab active:cursor-grabbing transition-colors', selectedTaskId === task.id ? 'text-white' : 'text-muted-foreground hover:text-foreground']">
+                <span
+                  :class="[
+                    'drag-handle cursor-grab active:cursor-grabbing transition-colors',
+                    selectedTaskId === task.id ? 'text-white' : 'text-muted-foreground hover:text-foreground',
+                  ]"
+                >
                   <GripVertical :size="14" />
                 </span>
                 <span class="text-sm font-medium truncate">{{ task.title }}</span>
@@ -175,7 +171,7 @@ function syncTaskOrder() {
                       : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
                 ]"
               >
-                {{ task.status === 'completed' ? '已完成' : task.status === 'in_progress' ? '进行中' : '待处理' }}
+                {{ task.status === "completed" ? "已完成" : task.status === "in_progress" ? "进行中" : "待处理" }}
               </span>
               <span
                 :class="[
@@ -187,7 +183,7 @@ function syncTaskOrder() {
                       : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
                 ]"
               >
-                {{ task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低' }}
+                {{ task.priority === "high" ? "高" : task.priority === "medium" ? "中" : "低" }}
               </span>
             </div>
           </div>
